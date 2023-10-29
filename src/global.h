@@ -13,7 +13,7 @@
 
 // Audio
 #ifdef _WIN32
-	// Play audio only on windows (via PlaySound)
+	// Play audio ONLY on windows (via PlaySound)
 	#define AUDIO 
 #endif
 

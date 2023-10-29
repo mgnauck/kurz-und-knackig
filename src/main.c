@@ -82,6 +82,11 @@ float						light_pos[]			= {-30.0f, 85.0f, 30.0f, 1.0f};
 int							explode				= 0;
 float						coll_sphere_rad		= 0.0f;
 
+// audio
+#if defined(AUDIO) || defined(AUDIO_SAVE)
+wavdata_t*					wav;
+#endif
+
 // capture frames
 #ifdef CAPTURE_FRAMES
 float 						capture_time = 0.0f;
@@ -220,11 +225,7 @@ void write_frame(const char* base_path, size_t width, size_t height, unsigned in
 static inline
 void init() {
 
-	int					i;
-
-#if defined(AUDIO) || defined(AUDIO_SAVE)
-	wavdata_t*			wav;
-#endif
+	int i;
 
 	// setup gl
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -502,6 +503,10 @@ void run() {
 			capture_time += CAPTURE_TIME_DELTA;
 		#endif
 		}
+
+	#if defined(AUDIO) || defined(AUDIO_SAVE)
+		free(wav);
+	#endif
 
 	#ifdef CAPTURE_FRAMES		
 		free(capture_buffer);

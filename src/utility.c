@@ -55,10 +55,6 @@ float randf(float min, float max) {
 	return min + (max - min) * ((float)rand() / (float)RAND_MAX);
 }
 
-/*void clamp(float* x, float vmin, float vmax) {
-	*x = min(max(*x, vmin), vmax);
-}*/
-
 float clamp(float x, float vmin, float vmax) {
 	return min(max(x, vmin), vmax);
 }
