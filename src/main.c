@@ -18,6 +18,10 @@
 #include "utility.h"
 #include "audio.h"
 
+#ifdef CAPTURE_FRAMES
+#include <png.h>
+#endif
+
 // object defs
 #define	FLOOR				0			// singles
 #define	CLOTH				1
@@ -46,14 +50,6 @@
 
 //  debug
 #define	TIME_OFFSET			0
-
-#ifdef CAPTURE_FRAMES
-	#include <png.h>
-
-	float 					capture_time = 0.0f;
-	unsigned long			capture_index = 0;
-	uint8_t*    			capture_buffer = NULL;
-#endif
 
 // audio
 #define	DURATION			(END_TIME / 1000)
@@ -86,6 +82,12 @@ float						light_pos[]			= {-30.0f, 85.0f, 30.0f, 1.0f};
 int							explode				= 0;
 float						coll_sphere_rad		= 0.0f;
 
+// capture frames
+#ifdef CAPTURE_FRAMES
+float 						capture_time = 0.0f;
+unsigned long				capture_index = 0;
+uint8_t*    				capture_buffer = NULL;
+#endif
 
 void set_cam(float ex, float ey, float ez, float tx, float ty, float tz) {
 	sim[0].x = ex;	sim[0].y = ey;	sim[0].z = ez;
@@ -106,16 +108,9 @@ float getTime() {
 }
 
 #ifdef CAPTURE_FRAMES
-// Writes a pixel buffer to file as PNG.
-// (Copied from the internet and adjusted to our needs.)
-// 
-// path - File path
-// pixel_data - Pixel buffer
-// width - Image width
-// height - Image height
-// bpp - Bits per pixel (support only for gray, gray alpha, rgb and rgba)   
-static int write_image_to_png_file(const char* path, size_t width, size_t height, size_t bpp, uint8_t* pixel_data)
+int write_image_to_png_file(const char* path, size_t width, size_t height, size_t bpp, uint8_t* pixel_data)
 {
+	// Ripped from the internet and adjusted.
     FILE*           fp;
     
     png_structp     png_ptr = NULL;
@@ -365,8 +360,8 @@ void run() {
 	}
 	// boxes_2
 	if((times[OVERALL_TIME] >= BOXES_2_TIME) && (times[OVERALL_TIME] < END_TIME)) {
-		stiffness_first = 0.15f;
-		stiffness_second = 0.05f;
+		stiffness_first = 0.2f;
+		stiffness_second = 0.1f;
 		actual_objects = &ps[BOXES_2_START];
 		actual_count = BOXES_2_COUNT;
 		s = sin(times[OVERALL_TIME] * 0.0004f);
@@ -447,7 +442,7 @@ void run() {
 
 		init();
 
-		while(!GetAsyncKeyState(VK_ESCAPE) && (times[OVERALL_TIME] < (END_TIME - 500))) {
+		while(!GetAsyncKeyState(VK_ESCAPE) && (times[OVERALL_TIME] < END_TIME)) {
 			run();
 			SwapBuffers(device);
 		}
@@ -494,7 +489,7 @@ void run() {
 
 		init();
 
-		while(!glfwWindowShouldClose(window) && (times[OVERALL_TIME] < (END_TIME - 500))) {
+		while(!glfwWindowShouldClose(window) && (times[OVERALL_TIME] < END_TIME)) {
 
 			run();
 			
