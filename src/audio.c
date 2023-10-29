@@ -122,7 +122,7 @@ void audio_prerender(wavdata_t** wav, int duration, int samplerate) {
 	// pre-render track
 	for(i=0; i<duration * samplerate; i++) {
 
-		ticks[PAT_TICK] = (i / samplerate / 100) % 32;
+		ticks[PAT_TICK] = (i / (samplerate / 10)) % 32;
 
 		if(ticks[LAST_TICK] != ticks[PAT_TICK]) {
 
@@ -176,15 +176,16 @@ void audio_prerender(wavdata_t** wav, int duration, int samplerate) {
 			out += c[j].buf[c[j].ofs++ % c[j].delay] = ((*ptr[PTR_2]) >> 1) + (short)(c[j].buf[k % c[j].delay] * c[j].damp);
 		}
 
-#define FADE_LEN 20
+#define FADE_IN_LEN		(7 * samplerate)
+#define FADE_OUT_LEN	(FADE_IN_LEN * 2)
 
 		// Fade in
-		if(i < (samplerate / 10.0f * FADE_LEN))
-			fade += 1.f / (samplerate / 10.0f * FADE_LEN);
+		if(i < FADE_IN_LEN)
+			fade += 1.f / (float)FADE_IN_LEN;
 		
 		// Fade out
-		if(i > (duration * samplerate - samplerate / 10.0f * FADE_LEN))
-			fade -= 1.f / (samplerate / 10.0f * FADE_LEN);
+		if(i > (duration * samplerate) - FADE_OUT_LEN)
+			fade -= 1.f / (float)FADE_OUT_LEN;
 
 		out *= fade;
 
