@@ -43,7 +43,6 @@ typedef struct {
 } combfilter;
 
 float kick(float t) {
-	//return clamp((1.0f - tan(t * PI * 0.75f)) * sin(4.5f * PI * sqrt(t * 433.0f)) * 3.0f, -1.0f, 1.0f);
 	return clamp((1.0f - tan(t * PI * 0.69f)) * sin(3.5f * PI * sqrt(t * 433.0f)) * 1.43f, -1.0f, 1.0f);
 }
 
@@ -63,7 +62,6 @@ float bass(float t) {
 
 	t += 8.5f;
 
-	//return hsqr(sin(4.0f * PI * t * (1.0f + (1.0f + sin(100.0f * PI * t + sin(t) * 15.0f)) / 32.0f))) * 0.8f * (0.5f + sin(t * 22.f) * 0.5f);
 	return hsqr(sin(2.0f * PI * t * (1.0f + (123.0f + sin(100.0f * PI * t + sin(t) * 15.0f)) / 32.0f))) * 0.4f * (0.5f + sin(t * 26.f + 12.f) * 0.5f);
 }
 
@@ -187,9 +185,10 @@ void audio_prerender(wavdata_t** wav, int duration, int samplerate) {
 		if(i > (duration * samplerate) - FADE_OUT_LEN)
 			fade -= 1.f / (float)FADE_OUT_LEN;
 
-		out *= fade;
+		out *= 0.5f * fade;
 
-		*ptr[PTR_2]++ = (short)clamp(out * 0.5f, -32000.0f, 32000.0f);
+		//*ptr[PTR_2]++ = (short)clamp(out * 0.5f, -32000.0f, 32000.0f);
+        *ptr[PTR_2]++ = (short)((int)out < -32767 ? -32767 : ((int)out > 32767 ? 32767 : (int)out));
 	}
 }
 #endif
