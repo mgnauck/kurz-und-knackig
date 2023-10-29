@@ -1,2 +1,4 @@
 *.out
 *.wav
+*.png
+src/output

@@ -202,8 +202,8 @@ void audio_prerender(wavdata_t** wav, int duration, int samplerate) {
 #endif
 
 #ifdef AUDIO_SAVE
-	void audio_save(wavdata_t* wav) {
-		FILE* file = fopen("audio.wav", "wb+");
+	void audio_save(const char* file_path, wavdata_t* wav) {
+		FILE* file = fopen(file_path, "wb+");
 		fwrite(wav, sizeof(wavdata_t) - 2, 1, file);
 		fwrite(&(wav->data), wav->datasize, 1, file);
 		fclose(file);

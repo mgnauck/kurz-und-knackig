@@ -8,6 +8,7 @@
 	markus@unik.de
 
 	cc -lglfw -framework OpenGL audio.c face.c global.c main.c particle.c particlesystem.c spring.c utility.c vec.c
+	(Add -lpng when capturing frames)
 
 */
 
@@ -45,6 +46,14 @@
 
 //  debug
 #define	TIME_OFFSET			0
+
+#ifdef CAPTURE_FRAMES
+	#include <png.h>
+
+	float 					capture_time = 0.0f;
+	unsigned long			capture_index = 0;
+	uint8_t*    			capture_buffer = NULL;
+#endif
 
 // audio
 #define	DURATION			(END_TIME / 1000)
@@ -85,12 +94,133 @@ void set_cam(float ex, float ey, float ez, float tx, float ty, float tz) {
 
 static inline
 float getTime() {
-#ifndef SAFE_CODE
-	return (float)GetTickCount();
+#ifdef CAPTURE_FRAMES
+	return capture_time;
 #else
-	return (float)(glfwGetTime() * 1000.0);
+	#ifndef SAFE_CODE
+		return (float)GetTickCount();
+	#else
+		return (float)(glfwGetTime() * 1000.0);
+	#endif
 #endif
 }
+
+#ifdef CAPTURE_FRAMES
+// Writes a pixel buffer to file as PNG.
+// (Copied from the internet and adjusted to our needs.)
+// 
+// path - File path
+// pixel_data - Pixel buffer
+// width - Image width
+// height - Image height
+// bpp - Bits per pixel (support only for gray, gray alpha, rgb and rgba)   
+static int write_image_to_png_file(const char* path, size_t width, size_t height, size_t bpp, uint8_t* pixel_data)
+{
+    FILE*           fp;
+    
+    png_structp     png_ptr = NULL;
+    png_infop       info_ptr = NULL;
+
+    uint8_t         color_type;
+    size_t          bytes_per_pixel = bpp / 8;
+    
+    size_t          x, y, i;
+    png_byte**      row_pointers = NULL;
+    uint8_t*        pixel_ptr = NULL;
+    
+    // Set error state until data is written successfully
+    int             status = -1;
+
+    // Evaluate color type based on given bpp
+    switch(bpp) {
+        case 8:
+            color_type = PNG_COLOR_TYPE_GRAY;
+        break;
+        case 16:
+            color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
+        break;
+        case 24:
+            color_type = PNG_COLOR_TYPE_RGB;
+        break;
+        case 32:
+            color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+        break;
+        default:
+            // Unknown color type, return with error
+            return status;
+    }
+
+    // Open output file
+    fp = fopen(path, "wb+");
+    if(!fp) {
+        goto fopen_failed;
+    }
+
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if(png_ptr == NULL) {
+        goto png_create_write_struct_failed;
+    }
+    
+    info_ptr = png_create_info_struct(png_ptr);
+    if(info_ptr == NULL) {
+        goto png_create_info_struct_failed;
+    }
+    
+    // Set up error handling
+    if(setjmp(png_jmpbuf(png_ptr))) {
+        goto png_failure;
+    }
+    
+    // Set image attributes
+    png_set_IHDR(png_ptr, info_ptr, width, height, /* depth */ 8, color_type,
+        PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    
+    // Initialize png data rows
+    row_pointers = png_malloc(png_ptr, sizeof(png_byte*) * height);
+    pixel_ptr = pixel_data;
+    for(y=0; y<height; y++) {
+        png_byte* row = png_malloc(png_ptr, sizeof(uint8_t) * width * bytes_per_pixel);
+        row_pointers[height - 1 - y] = row;
+        for(x=0; x<width; x++) {
+            for(i=0; i<bytes_per_pixel; i++) {
+                *row++ = (png_byte)*pixel_ptr++;
+            }
+        }
+    }
+    
+    // Write the image data to "fp"
+    png_init_io(png_ptr, fp);
+    png_set_rows(png_ptr, info_ptr, row_pointers);
+    png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+
+    // File successfully written, set status accordingly
+    status = 0;
+    
+    for (y=0; y<height; y++) {
+        png_free(png_ptr, row_pointers[y]);
+    }
+    png_free(png_ptr, row_pointers);
+    
+ png_failure:
+ png_create_info_struct_failed:
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+ png_create_write_struct_failed:
+    fclose(fp);
+ fopen_failed:
+    return status;
+}
+
+void write_frame(const char* base_path, size_t width, size_t height, unsigned int index) {
+
+    char        image_path[1024];
+
+    snprintf(image_path, sizeof(image_path), "%s_%06u.png", base_path, index);
+
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, capture_buffer);
+
+    write_image_to_png_file(image_path, width, height, 24, capture_buffer);
+}
+#endif
 
 static inline
 void init() {
@@ -169,7 +299,7 @@ void init() {
 #endif
 
 #ifdef AUDIO_SAVE
-	audio_save(wav);
+	audio_save(AUDIO_FILE_PATH, wav);
 #endif
 
 	// init time vars
@@ -358,15 +488,29 @@ void run() {
 		glfwMakeContextCurrent(window);
 		glfwSwapInterval(1);
 
+	#ifdef CAPTURE_FRAMES		
+		capture_buffer = (uint8_t*)malloc(RESX * RESY * 3);
+	#endif
+
 		init();
 
-		while(!glfwWindowShouldClose(window)) {
+		while(!glfwWindowShouldClose(window) && (times[OVERALL_TIME] < (END_TIME - 500))) {
 
 			run();
 			
 			glfwSwapBuffers(window);
 			glfwPollEvents();
+
+		#ifdef CAPTURE_FRAMES
+			write_frame(CAPTURE_IMAGE_PATH, RESX, RESY, capture_index);
+			capture_index++;
+			capture_time += CAPTURE_TIME_DELTA;
+		#endif
 		}
+
+	#ifdef CAPTURE_FRAMES		
+		free(capture_buffer);
+	#endif
 
 		glfwDestroyWindow(window);
 		glfwTerminate();

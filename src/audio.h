@@ -37,7 +37,7 @@ void	audio_play(wavdata_t* wav);
 #endif
 
 #ifdef AUDIO_SAVE
-void	audio_save(wavdata_t* wav);
+void	audio_save(const char* file_path, wavdata_t* wav);
 #endif
 
 #endif

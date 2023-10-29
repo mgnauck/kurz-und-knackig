@@ -17,13 +17,25 @@
 	// Play audio only on windows (via PlaySound)
 	#define AUDIO 
 #endif
+
 // Save audio to file
-//#define AUDIO_SAVE
+#define AUDIO_SAVE
+#ifdef AUDIO_SAVE
+	#define AUDIO_FILE_PATH		"output/audio.wav"
+#endif
 
 // Video
 //#define FULLSCREEN
-#define RESX					1024
-#define RESY					576
+#define RESX					1280
+#define RESY					720
+
+// Save video to png files
+//#define CAPTURE_FRAMES
+#ifdef CAPTURE_FRAMES
+	#define CAPTURE_FRAME_RATE		60
+	#define CAPTURE_TIME_DELTA		1000.f / (float)CAPTURE_FRAME_RATE
+	#define CAPTURE_IMAGE_PATH		"output/output" // Index and .png is attached automatically
+#endif
 
 // Data
 #define TEXTURE_RES				2
