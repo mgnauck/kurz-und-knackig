@@ -69,7 +69,7 @@
 	#include <GLFW/glfw3.h>
 
 	#ifdef __APPLE__
-		#include <OpenGL/gl.h>
+		//#include <OpenGL/gl.h>
 		#include <OpenGL/glu.h>
 	#endif
 
